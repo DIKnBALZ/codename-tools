@@ -44,10 +44,10 @@ function create() {
 
 function update(elapsed) {
     if (FlxG.keys.justPressed.EIGHT)
-        FlxG.switchState(new UIState(true, 'converters/EventConverter'));
+        FlxG.switchState(new UIState(true, 'tools/EventConverter'));
 
     if (FlxG.keys.justPressed.ESCAPE)
-        FlxG.switchState(new UIState(true, 'ConverterSelection'));
+        FlxG.switchState(new UIState(true, 'ToolSelection'));
 }
 
 function convert() {
