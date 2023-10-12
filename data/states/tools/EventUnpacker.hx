@@ -5,10 +5,7 @@ import funkin.editors.ui.UIText;
 import openfl.display.BitmapData;
 import openfl.net.FileReference;
 import openfl.display.PNGEncoderOptions;
-import flixel.util.FlxColor;
-import haxe.crypto.Base64;
 import haxe.io.Path;
-import sys.io.File;
 
 var packfile:UIFileExplorer;
 var label:UIText;
@@ -48,6 +45,6 @@ function convert() {
     var ass = BitmapData.fromBase64(shit[3], 'UTF8');
     var shitass = ass.encode(ass.rect, new PNGEncoderOptions());
     shitass.position = 0;
-    
+
     new FileReference().save(shitass, eventName + '.png');
 }
