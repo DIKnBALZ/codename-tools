@@ -5,7 +5,6 @@ import funkin.editors.ui.UIWarningSubstate;
 import lime.ui.FileDialog;
 import sys.io.File;
 import lime.ui.FileDialogType;
-import funkin.backend.utils.NativeAPI;
 import funkin.game.Character;
 import StringTools;
 import haxe.ds.StringMap;
@@ -25,7 +24,13 @@ var cameraOffsetText:FlxText;
 var editingGlobal:Bool = false;
 var editingLocal:Bool = true;
 var editingCamera:Bool = false;
+var dragging:Bool = false;
 var animList:Array<String> = [];
+var nextScroll = [0, 0];
+var nextOffset = [0, 0];
+var lastOffset = [0, 0];
+var nextGlobalOffset = [0, 0];
+var lastGlobalOffset = [0, 0];
 var curAnim:Int = 0;
 var animXmls:StringMap<Xml>;
 
@@ -73,13 +78,11 @@ function create()
 
 	infoText = new FlxText(FlxG.width-250, 25, 0, 'Editing LOCAL Offset', 25);
 	infoText.cameras = [uicam];
-	infoText.font = Paths.font('GOTHICB.ttf');
 	infoText.x = FlxG.width-7-(infoText.width);
 	add(infoText);
 
 	offsetText = new FlxText(infoText.x, 75, 0, 'Animation Name [offsetX, offsetY]\n[null out of null]', 25);
 	offsetText.cameras = [uicam];
-	offsetText.font = Paths.font('GOTHIC.ttf');
 	add(offsetText);
 
 	var topmenu:UITopMenu = new UITopMenu([
@@ -168,13 +171,6 @@ function create()
 			label: "View",
 			childs: [
 				{
-					label: "Show Console",
-					onSelect: () ->
-					{
-						NativeAPI.allocConsole();
-					}
-				},
-				{
 					label: "Reference",
 					onSelect: () ->
 					{
@@ -197,14 +193,20 @@ function create()
 					label: "Controls",
 					onSelect: () ->
 					{
-						openSubState(new UIWarningSubstate("Controls", "WASD - Move Camera\nMouse Wheel - Zoom Camera\nArrow Keys - Move Offset\nControl (Hold) - Smaller Offset Movement\nShift (Hold) - Larger Offset Movement", [
+						openSubState(new UIWarningSubstate("Controls", 
+						"Midde Mouse Button or Mouse + Space or WASD - Move Camera
+						Mouse Wheel - Zoom Camera
+
+						Arrow Keys - Move Offset
+						Control (Hold) - Smaller Offset Movement
+						Shift (Hold) - Larger Offset Movement", [
 							{
 								label: "OK",
 								onClick: function(t)
 								{
 								}
 							}
-						]));
+						], false));
 					}
 				}
 			]
@@ -216,6 +218,11 @@ function create()
 	nextButton = new UIButton(offsetText.x, offsetText.y+offsetText.height+10, "Next", function(){
 		if (curAnim+1 < animList.length)
 			curAnim++;character.playAnim(animList[curAnim], true);
+
+        nextOffset = [character.animOffsets[character.getAnimName()].x, character.animOffsets[character.getAnimName()].y];
+        lastOffset = nextOffset;
+        nextGlobalOffset = [character.globalOffset.x, character.globalOffset.y];
+        lastGlobalOffset = [character.globalOffset.x, character.globalOffset.y];
 	});
 	nextButton.cameras = [uicam];
 	add(nextButton);
@@ -223,24 +230,27 @@ function create()
 	prevButton = new UIButton(nextButton.x, nextButton.y+40, "Previous", function(){
 		if (curAnim+1 > 1)
 			curAnim--;character.playAnim(animList[curAnim], true);
+
+		nextOffset = [character.animOffsets[character.getAnimName()].x, character.animOffsets[character.getAnimName()].y];
+        lastOffset = nextOffset;
+        nextGlobalOffset = [character.globalOffset.x, character.globalOffset.y];
+        lastGlobalOffset = [character.globalOffset.x, character.globalOffset.y];
 	});
 	prevButton.cameras = [uicam];
 	add(prevButton);
 
 	globalOffsetText = new FlxText(infoText.x, prevButton.y+40, 0, 'Global Offset: 0, 0', 25);
 	globalOffsetText.cameras = [uicam];
-	globalOffsetText.font = Paths.font('GOTHIC.ttf');
 	add(globalOffsetText);
 
 	cameraOffsetText = new FlxText(infoText.x, globalOffsetText.y+globalOffsetText.height, 0, 'Camera Offset: 0, 0', 25);
 	cameraOffsetText.cameras = [uicam];
-	cameraOffsetText.font = Paths.font('GOTHIC.ttf');
 	add(cameraOffsetText);
 
-	var charCam = character.getCameraPosition();
-	cameraPoint = new FlxSprite(charCam.x, charCam.y).makeGraphic(25, 25, 0xFFFFFFFF);
-	// cameraPoint.shader = new CustomShader('fuck');
-	cameraPoint.antialiasing = true;
+	var charCameraPos = character.getCameraPosition();
+	cameraPoint = new FlxSprite(charCameraPos.x, charCameraPos.y).loadGraphic(Paths.image('dumb'));
+	cameraPoint.antialiasing = false;
+	cameraPoint.scale.set(9,9);
 	cameraPoint.cameras = [charcam];
 	add(cameraPoint);
 
@@ -277,28 +287,9 @@ function openChar(file) {
 	for (anim in character.xml.elementsNamed("anim")) {
 		animXmls.set(anim.get("name"), anim);
 	}
-
-	if (character.playerOffsets) {
-		CoolUtil.switchAnimFrames(character.animation.getByName('singRIGHT'), character.animation.getByName('singLEFT'));
-		CoolUtil.switchAnimFrames(character.animation.getByName('singRIGHTmiss'), character.animation.getByName('singLEFTmiss'));
-		character.switchOffset('singLEFT', 'singRIGHT');
-		character.switchOffset('singLEFTmiss', 'singRIGHTmiss');
-		character.flipX = !character.flipX;
-		character.__baseFlipped = character.flipX;
-		character.isPlayer = true;
-
-		CoolUtil.switchAnimFrames(ghostCharacter.animation.getByName('singRIGHT'), ghostCharacter.animation.getByName('singLEFT'));
-		CoolUtil.switchAnimFrames(ghostCharacter.animation.getByName('singRIGHTmiss'), ghostCharacter.animation.getByName('singLEFTmiss'));
-		ghostCharacter.switchOffset('singLEFT', 'singRIGHT');
-		ghostCharacter.switchOffset('singLEFTmiss', 'singRIGHTmiss');
-		ghostCharacter.flipX = !ghostCharacter.flipX;
-		ghostCharacter.__baseFlipped = ghostCharacter.flipX;
-		ghostCharacter.isPlayer = true;
-	}
 }
 
-function update(elapsed:Float)
-{
+function update(elapsed:Float) {
 	if (FlxG.keys.justPressed.EIGHT)
 		FlxG.switchState(new UIState(true, 'tools/UICharacterEditor'));
 
@@ -311,11 +302,11 @@ function update(elapsed:Float)
 	if (FlxG.keys.pressed.D)
 		charcam.scroll.x += 500 / charcam.zoom * elapsed;
 	if (FlxG.mouse.wheel < 0)
-		charcam.zoom -= 2 * elapsed;
+		charcam.zoom -= 4 * elapsed;
 	if (FlxG.mouse.wheel > 0)
-		charcam.zoom += 2 * elapsed;
+		charcam.zoom += 4 * elapsed;
 
-	if (FlxG.keys.justPressed.SPACE)
+	if (FlxG.keys.justPressed.ENTER)
 		character.playAnim(character.getAnimName(), true);
 	if (FlxG.keys.justPressed.LEFT)
 		if (editingGlobal)
@@ -353,6 +344,22 @@ function update(elapsed:Float)
 			character.cameraOffset.x += (FlxG.keys.pressed.SHIFT?10:(FlxG.keys.pressed.CONTROL?1:5));
 			character.xml.set("camx", character.cameraOffset.x);
 		}
+	if (FlxG.keys.justPressed.R)
+		if (editingGlobal) {
+			character.globalOffset.x = character.globalOffset.y = 0;
+			character.xml.set("x", character.globalOffset.x);
+			character.xml.set("y", character.globalOffset.y);
+			character.playAnim(animList[curAnim], false);
+		} else if (editingLocal) {
+			character.animOffsets[character.getAnimName()].x = character.animOffsets[character.getAnimName()].y = 0;
+			animXmls[animList[curAnim]].set("x", character.animOffsets[animList[curAnim]].x);
+			animXmls[animList[curAnim]].set("y", character.animOffsets[animList[curAnim]].y);
+			character.playAnim(animList[curAnim], false);
+		} else if (editingCamera) {
+			character.cameraOffset.x = character.cameraOffset.y = 0;
+			character.xml.set("camx", character.cameraOffset.x);
+			character.xml.set("camy", character.cameraOffset.y);
+		}
 	
 	offsetText.text = character.getAnimName()+' ['+character.animOffsets[character.getAnimName()].x+', '+character.animOffsets[character.getAnimName()].y+']\n['+(animList.indexOf(character.getAnimName())+1)+' out of '+animList.length+']';
 	offsetText.x = FlxG.width-7-(offsetText.width);
@@ -362,6 +369,54 @@ function update(elapsed:Float)
 	cameraPoint.setPosition(camPos.x, camPos.y);
 	cameraOffsetText.text = 'Camera Offset: '+character.cameraOffset.x+', '+character.cameraOffset.y;
 	cameraOffsetText.x = FlxG.width-7-(cameraOffsetText.width);
+
+	if (FlxG.mouse.pressedMiddle || (FlxG.mouse.pressed && FlxG.keys.pressed.SPACE))
+        nextScroll = [nextScroll[0] - FlxG.mouse.deltaScreenX, nextScroll[1] - FlxG.mouse.deltaScreenY];
+
+	if (editingLocal) {
+		if (FlxG.mouse.pressed && hoveredSprite == null && ![nextButton.hovered, prevButton.hovered].contains(true)) {
+			lastOffset = [character.animOffsets[character.getAnimName()].x, character.animOffsets[character.getAnimName()].y];
+			dragging = true;
+			nextOffset = [nextOffset[0] - (FlxG.mouse.deltaScreenX/charcam.zoom), nextOffset[1] - (FlxG.mouse.deltaScreenY/charcam.zoom)];
+		} else {
+			dragging = false;
+			nextOffset = [character.animOffsets[character.getAnimName()].x, character.animOffsets[character.getAnimName()].y];
+		}
+	} else if (editingGlobal) {
+		if (FlxG.mouse.pressed && hoveredSprite == null && ![nextButton.hovered, prevButton.hovered].contains(true)) {
+			lastGlobalOffset = [character.globalOffset.x, character.globalOffset.y];
+			dragging = true;
+			nextGlobalOffset = [nextGlobalOffset[0] + (FlxG.mouse.deltaScreenX/charcam.zoom), nextGlobalOffset[1] + (FlxG.mouse.deltaScreenY/charcam.zoom)];
+		} else {
+			dragging = false;
+			nextGlobalOffset = [character.globalOffset.x, character.globalOffset.y];
+		}
+	}
+
+	if (dragging) {
+		if (editingLocal) {
+			character.animOffsets[character.getAnimName()].x = nextOffset[0]/(character.animOffsets[character.getAnimName()].x == lastOffset[0] ? 1 : charcam.zoom);
+			character.animOffsets[character.getAnimName()].y = nextOffset[1]/(character.animOffsets[character.getAnimName()].y == lastOffset[1] ? 1 : charcam.zoom);
+			animXmls[animList[curAnim]].set("x", FlxMath.roundDecimal(character.animOffsets[animList[curAnim]].x, 0));
+			animXmls[animList[curAnim]].set("y", FlxMath.roundDecimal(character.animOffsets[animList[curAnim]].y, 0));
+			character.playAnim(animList[curAnim], true, 'NONE', false, character.animation.numFrames);
+		} else if (editingGlobal) {
+			character.globalOffset.x = nextGlobalOffset[0]/(character.globalOffset.x == lastGlobalOffset[0] ? 1 : charcam.zoom);
+			character.globalOffset.y = nextGlobalOffset[1]/(character.globalOffset.y == lastGlobalOffset[1] ? 1 : charcam.zoom);
+			character.xml.set("x", FlxMath.roundDecimal(character.globalOffset.x, 0));
+			character.xml.set("y", FlxMath.roundDecimal(character.globalOffset.y, 0));
+			character.playAnim(animList[curAnim], true, 'NONE', false, character.animation.numFrames);
+		}
+	}
+
+	if (FlxG.mouse.justPressedRight) {
+		character.cameraOffset.x = FlxMath.roundDecimal(FlxG.mouse.getWorldPosition(charcam).x-(character.getCameraPosition().x-character.cameraOffset.x), 0);
+		character.cameraOffset.y = FlxMath.roundDecimal(FlxG.mouse.getWorldPosition(charcam).y-(character.getCameraPosition().y-character.cameraOffset.y), 0);
+		character.xml.set("camx", character.cameraOffset.x);
+		character.xml.set("camy", character.cameraOffset.y);
+	}
+
+    charcam.scroll.set(nextScroll[0]/charcam.zoom, nextScroll[1]/charcam.zoom);
 }
 
 function offsetChar(global:Bool, editY:Bool, modifier:Float) {
