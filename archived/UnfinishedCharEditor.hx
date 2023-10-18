@@ -199,7 +199,7 @@ function create() {
 
 function update(elapsed:Float) {
 	if (FlxG.keys.justPressed.EIGHT) FlxG.switchState(new UIState(true, 'tools/UnfinishedCharEditor'));
-	if (FlxG.keys.justPressed.ESCAPE) FlxG.switchState(new MainMenuState());
+	if (FlxG.keys.justPressed.ESCAPE) FlxG.switchState(new UIState(true, 'ToolSelection'));
 
 	if (FlxG.mouse.justPressed && mouseOverlapsChar()) {
 		dragging = true;

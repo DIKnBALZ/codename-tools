@@ -11,10 +11,12 @@ function create() {
     FlxG.mouse.visible = true;
 
     for (i in FileSystem.readDirectory('addons/codename-tools/data/states/tools')) {
-        var button = new UIButton(0, 52, i, function() {FlxG.switchState(new UIState(true, 'tools/' + StringTools.replace(i, '.hx', '')));}, 320, 64);
-        button.screenCenter(FlxAxes.X);
-        button.setPosition(button.x - 160, button.y - 16 + (96*buttons.members.length));
-        buttons.add(button);
+        if (StringTools.endsWith(i, 'hx')) {
+            var button = new UIButton(0, 52, i, function() {FlxG.switchState(new UIState(true, 'tools/' + StringTools.replace(i, '.hx', '')));}, 320, 64);
+            button.screenCenter(FlxAxes.X);
+            button.setPosition(button.x - 160, button.y - 16 + (96*buttons.members.length));
+            buttons.add(button);
+        }
     }
 
     add(buttons);
