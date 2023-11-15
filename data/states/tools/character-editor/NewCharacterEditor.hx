@@ -184,8 +184,8 @@ function update(elapsed:Float) {
 
 	if (dragging) {
 		if (!globalCheck.checked) {
-			character.animOffsets[character.getAnimName()].x = draggingProperties.nextOffset[0]/(character.animOffsets[character.getAnimName()].x == draggingProperties.lastOffset[0] ? 1 : charcam.zoom);
-			character.animOffsets[character.getAnimName()].y = draggingProperties.nextOffset[1]/(character.animOffsets[character.getAnimName()].y == draggingProperties.lastOffset[1] ? 1 : charcam.zoom);
+			character.animOffsets[character.getAnimName()].x = Std.int(draggingProperties.nextOffset[0]/(character.animOffsets[character.getAnimName()].x == draggingProperties.lastOffset[0] ? 1 : charcam.zoom));
+			character.animOffsets[character.getAnimName()].y = Std.int(draggingProperties.nextOffset[1]/(character.animOffsets[character.getAnimName()].y == draggingProperties.lastOffset[1] ? 1 : charcam.zoom));
 			ghostCharacter.animOffsets[character.getAnimName()].x = character.animOffsets[character.getAnimName()].x;
 			ghostCharacter.animOffsets[character.getAnimName()].y = character.animOffsets[character.getAnimName()].y;
 	
@@ -196,8 +196,8 @@ function update(elapsed:Float) {
 			character.frameOffset.set(character.getAnimOffset(character.getAnimName()).x, character.getAnimOffset(character.getAnimName()).y);
 			if (character.getAnimName() == ghostCharacter.getAnimName()) ghostCharacter.frameOffset.set(ghostCharacter.getAnimOffset(ghostCharacter.getAnimName()).x, ghostCharacter.getAnimOffset(ghostCharacter.getAnimName()).y);
 		} else {
-			character.globalOffset.x = draggingProperties.nextOffset[0]/(character.globalOffset.x == draggingProperties.lastOffset[0] ? 1 : charcam.zoom);
-			character.globalOffset.y = draggingProperties.nextOffset[1]/(character.globalOffset.y == draggingProperties.lastOffset[1] ? 1 : charcam.zoom);
+			character.globalOffset.x = Std.int(draggingProperties.nextOffset[0]/(character.globalOffset.x == draggingProperties.lastOffset[0] ? 1 : charcam.zoom));
+			character.globalOffset.y = Std.int(draggingProperties.nextOffset[1]/(character.globalOffset.y == draggingProperties.lastOffset[1] ? 1 : charcam.zoom));
 			character.playAnim(character.getAnimName(), true);
 
 			ghostCharacter.globalOffset.x = character.globalOffset.x;
@@ -227,6 +227,7 @@ function update(elapsed:Float) {
 
 function save() {
 	if (character.isPlayer) character.flipX = !character.flipX;
-    new FileReference().save(character.buildXML(animList).toString(), currentCharacter + '.xml');
+	var finalString:String = StringTools.replace(character.buildXML(animList).toString(), '><', '>\n<');
+    new FileReference().save(, currentCharacter + '.xml');
 	if (character.isPlayer) character.flipX = !character.flipX;
 }
