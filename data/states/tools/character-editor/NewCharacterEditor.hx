@@ -209,8 +209,8 @@ function update(elapsed:Float) {
 	}
 
 	if (FlxG.mouse.justPressedRight) {
-		character.cameraOffset.x = FlxG.mouse.getWorldPosition(charcam).x-(character.getCameraPosition().x-character.cameraOffset.x);
-		character.cameraOffset.y = FlxG.mouse.getWorldPosition(charcam).y-(character.getCameraPosition().y-character.cameraOffset.y);
+		character.cameraOffset.x = Std.int(FlxG.mouse.getWorldPosition(charcam).x-(character.getCameraPosition().x-character.cameraOffset.x));
+		character.cameraOffset.y = Std.int(FlxG.mouse.getWorldPosition(charcam).y-(character.getCameraPosition().y-character.cameraOffset.y));
 	}
 
 	// UI STUFF
@@ -227,7 +227,12 @@ function update(elapsed:Float) {
 
 function save() {
 	if (character.isPlayer) character.flipX = !character.flipX;
+
 	var finalString:String = StringTools.replace(character.buildXML(animList).toString(), '><', '>\n<');
-    new FileReference().save(, currentCharacter + '.xml');
+	for (line in finalString.split('\n'))
+		if (StringTools.startsWith(line, '<anim'))
+			finalString = StringTools.replace(finalString, line, '	' + line);
+    new FileReference().save(finalString, currentCharacter + '.xml');
+
 	if (character.isPlayer) character.flipX = !character.flipX;
 }
