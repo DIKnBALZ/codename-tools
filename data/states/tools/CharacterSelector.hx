@@ -12,7 +12,7 @@ function create() {
     FlxG.mouse.visible = true;
 
     var path = ModsFolder.currentModFolder == '' || ModsFolder.currentModFolder == null ? 'assets/' : 'mods/' + ModsFolder.currentModFolder;
-    for (i in FileSystem.readDirectory(path +'/data/characters')) {
+    for (i in Paths.getFolderContent('data/characters', false, false)) {
         var button = new UIButton(0, 52, i, function() {
             stupidShit = StringTools.replace(i, '.xml', '');
 		    FlxG.switchState(new UIState(true, 'tools/character-editor/NewCharacterEditor'));
