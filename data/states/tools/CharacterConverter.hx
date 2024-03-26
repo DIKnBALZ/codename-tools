@@ -16,7 +16,7 @@ function create() {
     label = new UIText(0, 0, 0, 'JSON', 24, 0xFFFFFFFF, true);
     add(label);
 
-    jsonfile = new UIFileExplorer(475, 275, 'json');
+    jsonfile = new UIFileExplorer(475, 275, null, null, 'json');
     add(jsonfile);
 
     label.x = jsonfile.x - 64;
